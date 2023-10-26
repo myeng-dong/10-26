@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>$Title$</title>
+  <script type="module">
+  import { ajax } from '/js/common.js';
+  //등록
+    const addProduct = async payload => {
+      const url = '/product/add';
+      const result = await ajax.post(url,payload);
+      try{
+        if(result){
+          console.log(result);
+          pname.value = '';
+          quantity.value = '';
+          price.value = '';
+          listProduct();
+        }
+      } catch(err){
+        console.error(err.message);
+      }
+    }
+
+  //목록
+    const listProduct = async () => {
+      const url = '/product/all';
+      const result = await ajax.get(url);
+      try{
+        if(result != null){
+          console.log(result);
+          displayList(result)
+        }
+      } catch(err){
+        console.log(err.message);
+      }
+    }
+  //단건 조회
+    const searchProduct = async pid => {
+      const url = `/product/${pid}`;
+      console.log(url);
+      const result = await ajax.get(url);
+      try{
+        if(result != null){
+          console.log(result);
+          product_Id2.value = result.product_id;
+          pname2.value = result.pname;
+          quantity2.value = result.quantity;
+          price2.value = result.price;
+
+        }
+      } catch(err){
+        console.log(err.message);
+      }
+    }
+
+    // 삭제
+    const deleteProduct = async pid => {
+      const url = `/product/${pid}`;
+      console.log(url);
+      const result = await ajax.delete(url);
+      try{
+        if(result){
+          console.log(result);
+          product_Id2.value = '';
+          pname2.value = '';
+          quantity2.value = '';
+          price2.value = '';
+          listProduct();
+        }
+      } catch(err){
+        console.log(err.message);
+      }
+    }
+//=====================================================================
+    displaySearch();
+    displayAdd();
+    listProduct();
+    const $list = document.createElement('div');
+    document.body.appendChild($list);
+
+//=====================================================================
+
+  // 상품 등록
+  function displayAdd(){
+    const $form = document.createElement('div');
+
+    $form.innerHTML = `
+      <form id="frm"><h3>등록 하는곳</h3>
+        <div>상품명<input type="text" name="pname" id="pname"></div>
+        <div>상품수량<input type="text" name="quantity" id="quantity"></div>
+        <div>상품가격<input type="text" name="price" id="price"></div>
+        <input type="submit" value="등록">
+      </form>
+    `;
+    document.body.insertAdjacentElement('afterbegin', $form);
+    const $frm = document.querySelector('#frm');
+    $frm.addEventListener('submit', e=>{
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const product = {};
+      [...formData.keys()].forEach(ele => product[ele] = formData.get(ele));
+      console.log(product);
+      addProduct(product);
+    })
+  }
+
+// 상품조회
+  function displaySearch(){
+    const $form2 = document.createElement('div');
+
+    $form2.innerHTML = `
+      <form id="frm2"><h3>수정 및 삭제하는곳</h3>
+        <div>상품아이디<input type="text" name="product_Id" id="product_Id2" readonly></div>
+        <div>상품명<input type="text" name="pname2" id="pname2" readonly></div>
+        <div>상품수량<input type="text" name="quantity2" id="quantity2" readonly></div>
+        <div>상품가격<input type="text" name="price2" id="price2" readonly></div>
+        <input type="button" value="삭제" id="btnDelete"></button>
+        <input type="button" value="수정하러가기" id="btnUpdate"></button>
+      </form>
+    `;
+    document.body.insertAdjacentElement('afterbegin', $form2);
+    const $btnDel = document.querySelector('#btnDelete');
+    const $btnUp = document.querySelector('#btnUpdate');
+    $btnDel.addEventListener('click',e=>{
+     console.log(product_Id2.value);
+     const pid = product_Id2.value;
+     if(pid == null){
+      alert("상품을 클릭해주세요");
+      return
+     }
+     if(!confirm("삭제하시겠습니까?")) return;
+      deleteProduct(product_Id2.value);
+   });
+   $btnUp.addEventListener('click',e=>{
+    localStorage.setItem("pid",product_Id2.value);
+    localStorage.setItem("pname",pname2.value);
+    localStorage.setItem("quantity",quantity2.value);
+    localStorage.setItem("price",price2.value);
+
+    window.location.href = 'http://localhost:9080/product/update';
+   })
+
+  }
+
+
+
+  // 상품 전체조회 목록 html
+   function displayList(products){
+    const makeTr = products => {
+      const $tr = products.map(products =>
+        `<tr>
+          <td id="pid">${products.product_id}</td>
+          <td>${products.pname}</td>
+          <td>${products.quantity}</td>
+          <td>${products.price}</td>
+        </tr>`);
+        return $tr;
+        };
+
+
+// html에 함수로 요소 삽입
+ $list.innerHTML = `
+  <table>
+    <thead>
+        <tr>
+            <th>상품번호</th>
+            <th>상품명</th>
+            <th>상품수량</th>
+            <th>상품가격</th>
+        </tr>
+    </thead>
+    <tbody>
+      ${makeTr(products)}
+    </tbody>
+  </table>
+      `;
+      const $pid = $list.querySelectorAll('table tbody td:nth-of-type(1)');
+      [...$pid].forEach(ele =>
+        ele.addEventListener('click',e=>{
+          console.log(e.target.textContent);
+          const result = e.target.textContent;
+          console.log(typeof result);
+          searchProduct(result);
+        })
+      )
+
+    }
+  </script>
+
+</head>
+<body>
+</body>
+</html>
